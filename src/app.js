@@ -10,19 +10,14 @@ import {
 const $ = (s) => document.querySelector(s),
   kind = document.body.dataset.kind,
   isCommons = kind === "commons";
-const variant =
-  new URLSearchParams(location.search).get("v") === "2" ? "2" : "1";
-document.body.classList.toggle("v2", variant === "2");
-$(`.version-switch a[href^="?v=${variant}"]`).setAttribute(
-  "aria-current",
-  "page",
-);
+document.body.classList.add("v2");
 const labels = {
   source: "Lien dans la source",
   institution: "Lien dans l’institution",
   other: "Lien ailleurs",
   unverified: "À vérifier",
 };
+let visibleCount = 100;
 let result = null,
   run = null,
   isDemo = false,
@@ -84,6 +79,8 @@ async function execute(args, checkpoint) {
   $("#example").hidden = true;
   resumeButton.hidden = true;
   if (!checkpoint) {
+    visibleCount = 100;
+    if (isCommons) $("#results-title").textContent = "Fichiers repérés";
     result = null;
     $("#results").replaceChildren(
       el("p", { text: "Lecture des données publiques en cours…" }),
@@ -113,6 +110,7 @@ async function execute(args, checkpoint) {
       },
     });
     filter = "all";
+    visibleCount = 100;
     render();
   } catch (e) {
     error(e.message);
@@ -162,7 +160,7 @@ $("#search").onsubmit = (event) => {
       values,
       mode,
       scope: $("#scope")?.value,
-      limit: Number($("#limit")?.value || 50),
+      limit: Number($("#limit")?.value ?? 0),
     },
     null,
   );
@@ -205,14 +203,16 @@ function render() {
       });
       b.onclick = () => {
         filter = key;
+        visibleCount = 100;
         render();
       };
       $("#filters").append(b);
     }
     const list = el("div", { className: "record-list" });
-    for (const file of result.files.filter(
+    const filteredFiles = result.files.filter(
       (f) => filter === "all" || f.status === filter,
-    )) {
+    );
+    for (const file of filteredFiles.slice(0, visibleCount)) {
       const record = el("article", { className: "record" }),
         title = isDemo
           ? el("span", { text: file.title.replace(/^File:/, "") })
@@ -266,6 +266,21 @@ function render() {
         ? list
         : el("p", { text: "Aucun fichier dans cette catégorie." }),
     );
+    if (filteredFiles.length > visibleCount) {
+      const more = el("button", {
+        type: "button",
+        text: `Afficher 100 fichiers supplémentaires (${visibleCount} sur ${filteredFiles.length})`,
+      });
+      more.onclick = () => {
+        visibleCount += 100;
+        render();
+      };
+      $("#results").append(more);
+    }
+    if (!isDemo && result.discoveryComplete) {
+      $("#results-title").textContent =
+        `${numberFormat.format(result.files.length)} fichiers repérés${result.truncated ? " (limite atteinte)" : " au total"}`;
+    } else if (isCommons) $("#results-title").textContent = "Fichiers repérés";
     $("#coverage").textContent =
       "La présence d’un lien indique son emplacement, pas une provenance certifiée. Les liens générés par des modèles sont pris en compte dans la page affichée.";
     if (result.truncated) {

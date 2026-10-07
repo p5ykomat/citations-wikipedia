@@ -1,8 +1,8 @@
-# Citations Wikipédia
+# Compteur citations Wikipédia
 
 Repérer les articles qui renvoient vers une publication et vérifier les notes de référence dans lesquelles elle apparaît.
 
-**Version de travail. Deux directions graphiques locales sont proposées avant le choix de la version finale. Aucun nouveau site n’a été déployé.**
+Interface blanche et bleue (V2). Site : https://compteur-citations-wikipedia.vercel.app/
 
 ## Essayer sur son ordinateur
 
@@ -15,9 +15,7 @@ npm run dev
 
 Ouvrir l’adresse locale indiquée dans le terminal. Aucun compte ni clé API nécessaire. Les requêtes partent du navigateur vers les API publiques Wikimédia.
 
-- `/?v=1` : direction éditoriale, ivoire et brun.
-- `/?v=2` : direction studio, blanc et bleu.
-- Ajouter `&demo=1` pour afficher un exemple **fictif**, sans requête aux API.
+Ajouter `?demo=1` pour afficher un exemple **fictif**, sans requête aux API.
 
 ## Comprendre le résultat
 
