@@ -5,3 +5,7 @@ dist/
 *.log
 artifacts/
 .vercel
+
+# Consignes locales de développement
+/AGENTS.md
+/agent.md
