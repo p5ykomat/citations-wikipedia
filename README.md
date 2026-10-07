@@ -2,8 +2,6 @@
 
 Repérer les articles qui renvoient vers une publication et vérifier les notes de référence dans lesquelles elle apparaît.
 
-Interface blanche et bleue (V2). Site : https://compteur-citations-wikipedia.vercel.app/
-
 ## Essayer sur son ordinateur
 
 Installer une version récente de Node.js (22 ou 24), télécharger ce dépôt et ouvrir un terminal dans son dossier :
