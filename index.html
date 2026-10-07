@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Citations Wikipédia</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body data-kind="citations">
+    <a class="skip" href="#main">Aller au contenu</a>
+    <header>
+      <a class="brand" href="/"
+        ><span class="brand-icon" aria-hidden="true">⁙</span>Citations
+        Wikipédia</a
+      >
+      <nav aria-label="Navigation principale">
+        <button data-dialog="method">
+          Méthode <span aria-hidden="true">↗</span></button
+        ><button data-dialog="about">À propos</button
+        ><span class="version-switch"
+          ><a href="?v=1&demo=1">V1</a><a href="?v=2&demo=1">V2</a></span
+        >
+      </nav>
+    </header>
+    <main id="main">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">
+            Sources & publications <span> / </span> Données publiques
+          </p>
+          <h1>Suivre une source<br /><em>dans Wikipédia.</em></h1>
+        </div>
+        <p class="lead">
+          Repérez les articles qui renvoient vers un site et vérifiez la
+          présence de ses liens dans les références.
+        </p>
+        <div class="ornament" aria-hidden="true">“</div>
+      </section>
+      <div class="workspace">
+        <aside class="search-panel">
+          <div class="panel-heading">
+            <span class="step">01</span>
+            <h2>La recherche</h2>
+          </div>
+          <form id="search">
+            <label for="query">Sites à rechercher</label
+            ><textarea
+              id="query"
+              name="query"
+              rows="3"
+              placeholder="gallica.bnf.fr&#10;persee.fr"
+              required
+              aria-describedby="query-help"
+            ></textarea>
+            <p id="query-help" class="hint">
+              Un domaine ou une URL par ligne, cinq au maximum.
+            </p>
+            <fieldset>
+              <legend>Rechercher</legend>
+              <label
+                ><input type="radio" name="mode" value="domain" checked /> Le
+                domaine entier</label
+              ><label
+                ><input type="radio" name="mode" value="url" /> Une URL
+                exacte</label
+              >
+            </fieldset>
+            <label for="scope">Éditions de Wikipédia</label
+            ><select id="scope">
+              <option value="fr">Français</option>
+              <option value="en">Anglais</option>
+              <option value="de">Allemand</option>
+              <option value="core">Français, anglais, allemand</option>
+              <option value="all">Toutes les éditions (plus long)</option>
+            </select>
+            <p class="hint">Les pages de discussion sont exclues.</p>
+            <button class="primary" type="submit">
+              Lancer la recherche <span aria-hidden="true">↗</span></button
+            ><button id="stop" type="button" disabled>Arrêter</button>
+            <p id="error" role="alert" hidden></p>
+          </form>
+          <div class="search-foot">
+            <span class="small-label">À garder en tête</span>
+            <p>
+              Un lien dans un article n’est pas forcément une référence. La
+              vérification se fait dans le détail.
+            </p>
+            <button data-dialog="method" class="text-button">
+              Comprendre le comptage →
+            </button>
+          </div>
+        </aside>
+        <section class="result-panel" aria-labelledby="results-title">
+          <div class="results-heading">
+            <div>
+              <span class="small-label">02 / Le relevé</span>
+              <h2 id="results-title">Articles repérés</h2>
+            </div>
+            <button id="export" disabled>Exporter le CSV ↓</button>
+          </div>
+          <p id="status" role="status">Prêt pour une recherche.</p>
+          <progress
+            id="progress"
+            value="0"
+            max="100"
+            hidden
+            aria-label="Progression de la recherche"
+          ></progress>
+          <div id="example" hidden>
+            Exemple fictif pour comparer les maquettes. Lancez une recherche
+            pour obtenir des données réelles.
+          </div>
+          <div id="notice" hidden></div>
+          <div id="metrics" class="metrics"></div>
+          <div
+            id="filters"
+            class="filters"
+            aria-label="Filtrer les résultats"
+          ></div>
+          <div id="results">
+            <div class="empty">
+              <span aria-hidden="true">⌕</span>
+              <h3>Où votre source est-elle utilisée ?</h3>
+              <p>Renseignez un domaine pour lancer le relevé.</p>
+              <button id="demo" type="button">Voir un exemple fictif</button>
+            </div>
+          </div>
+          <p id="coverage" class="coverage"></p>
+        </section>
+      </div>
+      <footer>
+        <span>API publiques Wikimédia</span
+        ><span>Code MIT · Contenus CC BY-SA 4.0</span>
+      </footer>
+    </main>
+    <dialog id="method">
+      <div class="dialog-top">
+        <h2>Comment sont comptés les résultats ?</h2>
+        <button data-close aria-label="Fermer">×</button>
+      </div>
+      <p>
+        Le total compte les couples article et URL indexés par l’API, pas les
+        occurrences ni les citations bibliographiques. Seuls les articles sont
+        inclus. Un même couple n’est compté qu’une fois dans le total, même si
+        plusieurs domaines recherchés se recouvrent. « Vérifier les références »
+        lit la version actuelle de l’article et compte les notes de référence
+        contenant un lien vers la source. Les modèles sont développés. Une même
+        note réutilisée plusieurs fois reste une seule note.
+      </p>
+      <p>
+        Le relevé n’est pas une photographie exhaustive de toute la collection.
+        Il dépend de l’index des liens, de la version des pages et des accès
+        disponibles.
+      </p>
+      <a href="docs/AUDIT.md" target="_blank" rel="noopener"
+        >Lire les limites et les contrôles</a
+      >
+    </dialog>
+    <dialog id="about">
+      <div class="dialog-top">
+        <h2>À propos</h2>
+        <button data-close aria-label="Fermer">×</button>
+      </div>
+      <p>Retrouvez les autres outils sur Atlas.</p>
+      <a
+        href="https://mdenel.vercel.app/"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Ouvrir Atlas dans un nouvel onglet ↗</a
+      >
+    </dialog>
+    <dialog id="detail">
+      <div class="dialog-top">
+        <h2>Détail du résultat</h2>
+        <button data-close aria-label="Fermer">×</button>
+      </div>
+      <div id="detail-content"></div>
+    </dialog>
+  </body>
+</html>
