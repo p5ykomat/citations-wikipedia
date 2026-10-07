@@ -61,15 +61,89 @@ for (const b of document.querySelectorAll("[data-dialog]"))
 for (const b of document.querySelectorAll("[data-close]"))
   b.onclick = () => b.closest("dialog").close();
 $("#stop").onclick = () => run?.abort();
-$("#search").onsubmit = async (event) => {
+const storageKey = `${kind}-releve-v1`;
+let saved = null;
+const resumeButton = el("button", {
+  type: "button",
+  id: "resume",
+  text: "Reprendre le relevé",
+  hidden: true,
+});
+$("#status").after(resumeButton);
+function storeSnapshot(args, checkpoint, snapshot) {
+  saved = { args, checkpoint, result: snapshot, savedAt: Date.now() };
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(saved));
+  } catch {
+    /* Le relevé reste disponible en mémoire si le stockage est plein. */
+  }
+}
+async function execute(args, checkpoint) {
+  error("");
+  isDemo = false;
+  $("#example").hidden = true;
+  resumeButton.hidden = true;
+  if (!checkpoint) {
+    result = null;
+    $("#results").replaceChildren(
+      el("p", { text: "Lecture des données publiques en cours…" }),
+    );
+    $("#metrics").replaceChildren();
+    $("#filters").replaceChildren();
+    $("#coverage").textContent = "";
+    $("#notice").hidden = true;
+  }
+  run = createRun((text) => ($("#status").textContent = text));
+  busy(true);
+  $("#progress").hidden = false;
+  try {
+    result = await backend.runSearch({
+      ...args,
+      run,
+      checkpoint,
+      update: (n, total) =>
+        ($("#progress").value = total ? (n / total) * 100 : 0),
+      onCheckpoint: (state, snapshot) => {
+        storeSnapshot(args, state, snapshot);
+        result = snapshot;
+        const status = $("#status").textContent;
+        render();
+        $("#status").textContent = status;
+        resumeButton.hidden = true;
+      },
+    });
+    filter = "all";
+    render();
+  } catch (e) {
+    error(e.message);
+    $("#status").textContent =
+      "Relevé interrompu. Les données déjà reçues sont conservées.";
+    if (result) render();
+  } finally {
+    run = null;
+    busy(false);
+    $("#progress").hidden = true;
+    resumeButton.hidden = !result?.canResume;
+  }
+}
+resumeButton.onclick = () => {
+  if (!saved || run) return;
+  $("#query").value = saved.args.values.join("\n");
+  $(`input[name="mode"][value="${saved.args.mode}"]`).checked = true;
+  if ($("#scope")) $("#scope").value = saved.args.scope;
+  if ($("#limit")) $("#limit").value = saved.args.limit;
+  execute(saved.args, saved.checkpoint);
+};
+$("#search").onsubmit = (event) => {
   event.preventDefault();
+  if (run) return;
   error("");
   const values = $("#query")
     .value.split("\n")
     .map((s) => s.trim())
     .filter(Boolean);
-  if (values.length > 5) {
-    error("Limitez la recherche à cinq sources.");
+  if (!values.length || values.length > 5) {
+    error("Saisissez de une à cinq sources.");
     $("#query").focus();
     return;
   }
@@ -83,53 +157,23 @@ $("#search").onsubmit = async (event) => {
     return;
   }
   $("#query").removeAttribute("aria-invalid");
-  isDemo = false;
-  $("#example").hidden = true;
-  result = null;
-  $("#export").disabled = true;
-  $("#results").replaceChildren(
-    el("p", { text: "Lecture des données publiques en cours…" }),
-  );
-  $("#metrics").replaceChildren();
-  $("#filters").replaceChildren();
-  $("#coverage").textContent = "";
-  $("#notice").hidden = true;
-  run = createRun((text) => ($("#status").textContent = text));
-  busy(true);
-  $("#progress").hidden = false;
-  try {
-    result = await backend.runSearch({
+  execute(
+    {
       values,
       mode,
       scope: $("#scope")?.value,
       limit: Number($("#limit")?.value || 50),
-      run,
-      update: (n, total) => {
-        $("#progress").value = total ? (n / total) * 100 : 0;
-      },
-    });
-    filter = "all";
-    render();
-  } catch (e) {
-    error(e.message);
-    $("#status").textContent = "Relevé interrompu.";
-    $("#results").replaceChildren(
-      el("p", {
-        text: "Aucun total complet disponible. Vous pouvez relancer la recherche.",
-      }),
-    );
-  } finally {
-    run = null;
-    busy(false);
-    $("#progress").hidden = true;
-  }
+    },
+    null,
+  );
 };
 function render() {
+  resumeButton.hidden = isDemo || !result.canResume || Boolean(run);
   $("#example").hidden = !isDemo;
   $("#export").disabled = false;
   $("#status").textContent = isDemo
     ? "Exemple de présentation, sans appel aux API"
-    : `Relevé du ${formatDate(result.scannedAt)}`;
+    : `${result.partial ? "Relevé partiel" : "Relevé"} du ${formatDate(result.scannedAt)}`;
   $("#metrics").replaceChildren();
   $("#filters").replaceChildren();
   $("#results").replaceChildren();
@@ -142,7 +186,7 @@ function render() {
       ]),
     );
     $("#metrics").append(
-      metric(result.files.length, "Fichiers examinés"),
+      metric(result.files.length, "Fichiers repérés"),
       metric(counts.source, "Liens dans la source"),
       metric(counts.institution, "Dans l’institution"),
       metric(counts.other + counts.unverified, "Autres cas"),
@@ -296,6 +340,16 @@ function render() {
       $("#notice").hidden = false;
     }
   }
+  if (result.partial) {
+    $("#notice").textContent =
+      "Relevé incomplet : les résultats déjà reçus sont conservés. " +
+      (result.collectionError ||
+        (result.failures || [])
+          .map((f) => `${f.source} (${f.wiki}) : ${f.message}`)
+          .join(" ; ")) +
+      " Vous pouvez reprendre la collecte.";
+    $("#notice").hidden = false;
+  }
 }
 function showEvidence(file) {
   const contents = [
@@ -327,7 +381,7 @@ function showEvidence(file) {
   modal(contents);
 }
 async function showUsage(file, button) {
-  if (usageBusy) return;
+  if (usageBusy || run) return;
   if (isDemo) {
     modal([
       el("p", {
@@ -363,7 +417,7 @@ async function showUsage(file, button) {
   }
 }
 async function showReferences(article, query, button) {
-  if (usageBusy) return;
+  if (usageBusy || run) return;
   if (isDemo) {
     modal([
       el("p", {
@@ -426,7 +480,7 @@ $("#export").onclick = () => {
             f.revision || "",
             f.error || "",
             f.usage?.length ?? "",
-            result.truncated,
+            Boolean(result.truncated || result.partial),
             result.scannedAt.toISOString(),
           ]),
         ),
@@ -450,7 +504,7 @@ $("#export").onclick = () => {
             a.url,
             a.urls.length,
             a.urls.join(" | "),
-            Boolean(result.failures.length),
+            Boolean(result.partial || result.failures.length),
             result.scannedAt.toISOString(),
           ]),
         ),
@@ -534,3 +588,29 @@ function demo() {
 }
 $("#demo").onclick = demo;
 if (new URLSearchParams(location.search).get("demo") === "1") demo();
+
+if (new URLSearchParams(location.search).get("demo") !== "1") {
+  try {
+    const cached = JSON.parse(localStorage.getItem(storageKey) || "null");
+    if (cached?.result && Date.now() - cached.savedAt < 86400000) {
+      saved = cached;
+      result = cached.result;
+      result.scannedAt = new Date(result.scannedAt);
+      if (result.query)
+        result.query = normalizeQuery(result.query.display, result.query.mode);
+      for (const summary of result.summaries || [])
+        summary.query = normalizeQuery(
+          summary.query.display,
+          summary.query.mode,
+        );
+      $("#query").value = cached.args.values.join("\n");
+      render();
+      $("#status").textContent =
+        "Relevé sauvegardé du " +
+        formatDate(result.scannedAt) +
+        ". Relancez la recherche pour actualiser.";
+    }
+  } catch {
+    /* Une sauvegarde incompatible est ignorée. */
+  }
+}

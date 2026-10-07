@@ -992,3 +992,9 @@ body.v2 header {
     animation: none !important;
   }
 }
+
+#resume {
+  margin-bottom: 16px;
+  color: var(--accent);
+  border-color: var(--accent);
+}

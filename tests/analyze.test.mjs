@@ -106,19 +106,52 @@ test("références réelles distinctes des liens de bibliographie et lien extern
   assert.equal(r.referenceUrls.length, 2);
   assert.deepEqual(r.otherUrls, ["https://example.org/hors"]);
 });
-test("erreur lors de l’arrêt non transformée en relevé vide", async () => {
+test("pause conserve un checkpoint et reprend sans recompter les premières pages", async () => {
+  let checkpoint;
   const run = createRun();
-  run.abort();
-  await assert.rejects(
-    runSearch({
-      values: ["example.org"],
-      mode: "domain",
-      run,
-      request: async () => {
-        throw new Error("Analyse arrêtée.");
-      },
-      sitesOverride: [site],
-    }),
-    /arrêtée/,
-  );
+  let firstCalls = 0;
+  const first = await runSearch({
+    values: ["example.org"],
+    mode: "domain",
+    run,
+    sitesOverride: [site],
+    request: async () => {
+      firstCalls++;
+      return {
+        continue: { eucontinue: "next" },
+        query: { exturlusage: [row(1, "https://example.org/a")] },
+      };
+    },
+    onCheckpoint: (state) => {
+      checkpoint = structuredClone(state);
+      run.abort();
+    },
+  });
+  assert.equal(first.articleCount, 1);
+  assert.equal(first.canResume, true);
+  assert.equal(firstCalls, 1);
+  let nextCalls = 0;
+  const final = await runSearch({
+    values: ["example.org"],
+    mode: "domain",
+    run: createRun(),
+    sitesOverride: [site],
+    checkpoint,
+    request: async (api, p) => {
+      nextCalls++;
+      assert.equal(p.eucontinue, "next");
+      return {
+        query: {
+          exturlusage: [
+            row(1, "https://example.org/a"),
+            row(2, "https://example.org/b"),
+          ],
+        },
+      };
+    },
+  });
+  assert.equal(nextCalls, 1);
+  assert.equal(final.articleCount, 2);
+  assert.equal(final.linkCount, 2);
+  assert.equal(final.partial, false);
 });

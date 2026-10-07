@@ -35,3 +35,11 @@ Le site compilé se trouve dans `dist/`. Le dossier `src/` contient le code du n
 ## Licences
 
 Code sous [MIT](LICENSE). Textes, guides et créations visuelles originaux sous [CC BY-SA 4.0](LICENSE-DOCS.md). Attribution : **p5ykomat**. Les données externes conservent leurs licences et attributions.
+
+## Reprendre une collecte
+
+Les appels sont séquentiels, avec une pause d’au moins une seconde après chaque réponse et des pages de 100 liens au maximum pour le repérage. Si le service limite les requêtes, l’outil attend et réessaie, jusqu’à six tentatives par appel. Les résultats arrivent progressivement.
+
+**Mettre en pause** conserve l’avancement. **Reprendre le relevé** poursuit la collecte sans recommencer les pages déjà reçues. Le dernier relevé est sauvegardé dans ce navigateur et peut être restauré pendant 24 heures, même après un rechargement. Une nouvelle recherche repart de zéro pour actualiser les données. Si le stockage du navigateur est plein ou interdit, la reprise reste disponible tant que la page demeure ouverte.
+
+Une panne durable de l’API peut laisser un relevé partiel : les données reçues restent consultables et exportables, avec cette limite indiquée. Aucun résultat manquant n’est remplacé par un chiffre inventé.

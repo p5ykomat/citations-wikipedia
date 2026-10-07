@@ -36,11 +36,13 @@ function retryDelay(response, attempt) {
     const date = Date.parse(retryAfter);
     if (Number.isFinite(date)) return Math.max(1000, date - Date.now());
   }
-  return Math.min(20000, 1500 * 2 ** attempt);
+  return Math.min(60000, 5000 * 2 ** attempt);
 }
 
 export async function mediaWikiRequest(api, parameters, run, options = {}) {
-  const retries = options.retries ?? 3;
+  const retries = options.retries ?? 5;
+  const pause = options.wait ?? wait;
+  const minInterval = options.minInterval ?? 1000;
   const timeout = options.timeout ?? DEFAULT_TIMEOUT;
   const url = new URL(api);
   const params = {
@@ -62,7 +64,7 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
     if (run?.nextAllowedAt > Date.now()) {
       const delay = run.nextAllowedAt - Date.now();
       run.status(`Pause API · reprise dans ${Math.ceil(delay / 1000)} s`);
-      await wait(run, delay);
+      await pause(run, delay);
     }
 
     const controller = new AbortController();
@@ -75,6 +77,12 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
         signal: controller.signal,
         headers: {
           Accept: "application/json",
+          ...(typeof window === "undefined"
+            ? {
+                "User-Agent":
+                  "citations-wikipedia/0.1 (https://github.com/p5ykomat/citations-wikipedia)",
+              }
+            : {}),
           "Api-User-Agent": `citations-wikipedia/0.1 (${contact})`,
         },
       });
@@ -84,7 +92,10 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
         throw new Error(`RETRY:${response.status}:${delay}`);
       }
       if (run)
-        run.nextAllowedAt = Math.max(run.nextAllowedAt, Date.now() + 150);
+        run.nextAllowedAt = Math.max(
+          run.nextAllowedAt,
+          Date.now() + minInterval,
+        );
       if (!response.ok) throw new Error(`Erreur API HTTP ${response.status}.`);
       const data = await response.json();
       if (data.error) {
@@ -104,9 +115,9 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
       if (message.startsWith("RETRY:") && attempt < retries) {
         const delay = Number(message.split(":")[2]) || 2000;
         run.status(
-          `Serveur occupé · nouvelle tentative dans ${Math.ceil(delay / 1000)} s`,
+          `API occupée · reprise automatique dans ${Math.ceil(delay / 1000)} s (essai ${attempt + 2}/${retries + 1})`,
         );
-        await wait(run, delay);
+        await pause(run, delay);
         continue;
       }
       if (error?.name === "AbortError" && attempt < retries) {
@@ -114,8 +125,18 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
         run.status(
           `Délai dépassé · nouvelle tentative dans ${Math.ceil(delay / 1000)} s`,
         );
-        await wait(run, delay);
+        await pause(run, delay);
         continue;
+      }
+      if (message.startsWith("RETRY:")) {
+        throw new Error(
+          "API temporairement indisponible après plusieurs tentatives. Reprenez le relevé dans quelques minutes.",
+        );
+      }
+      if (error?.name === "AbortError") {
+        throw new Error(
+          "L’API ne répond pas dans le délai prévu. Vous pouvez reprendre le relevé.",
+        );
       }
       if (message === "Failed to fetch") {
         throw new Error(
@@ -146,7 +167,13 @@ export async function getWikipediaSites(run) {
   const seen = new Set();
   for (const entry of Object.values(data?.sitematrix || {})) {
     for (const site of entry?.site || []) {
-      if (!site?.url || site.closed || site.private || site.fishbowl) continue;
+      if (
+        !site?.url ||
+        "closed" in site ||
+        "private" in site ||
+        "fishbowl" in site
+      )
+        continue;
       const match = site.url.match(/^https:\/\/([a-z0-9-]+)\.wikipedia\.org$/i);
       if (!match || seen.has(match[1])) continue;
       seen.add(match[1]);

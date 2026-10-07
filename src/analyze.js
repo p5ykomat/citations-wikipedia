@@ -64,6 +64,8 @@ export async function runSearch({
   update = () => {},
   request = mediaWikiRequest,
   sitesOverride,
+  checkpoint,
+  onCheckpoint = () => {},
 }) {
   const queries = [
     ...new Map(
@@ -77,100 +79,136 @@ export async function runSearch({
   ];
   if (!queries.length)
     throw new Error("Saisissez au moins un domaine ou une URL.");
+  const signature = JSON.stringify([
+    queries.map((q) => [q.mode, q.display]),
+    scope,
+  ]);
+  const saved = checkpoint?.signature === signature ? checkpoint : null;
   const sites =
     sitesOverride ||
+    saved?.sites ||
     (scope === "all"
       ? await getWikipediaSites(run)
       : scope === "core"
         ? Object.values(SITES)
         : [SITES[scope] || SITES.fr]);
   if (!sites.length) throw new Error("Aucune Wikipédia disponible.");
-  const summaries = [],
-    failures = [],
-    globalPairs = new Set(),
-    globalPages = new Set();
-  let done = 0;
-  for (const query of queries) {
-    const articles = new Map(),
-      urls = new Set(),
-      pairs = new Set();
+  const state = saved || {
+    signature,
+    sites,
+    tasks: {},
+    startedAt: new Date().toISOString(),
+  };
+  function snapshot() {
+    const globalPages = new Set(),
+      globalPairs = new Set(),
+      failures = [];
+    const summaries = queries.map((query) => {
+      const articles = [],
+        urls = new Set();
+      let count = 0;
+      for (const site of sites) {
+        const task = state.tasks[`${query.display}|${site.code}`];
+        if (!task) continue;
+        if (task.error)
+          failures.push({
+            source: query.display,
+            wiki: site.code,
+            message: task.error,
+          });
+        for (const a of task.articles) {
+          articles.push(a);
+          globalPages.add(a.key);
+          count += a.urls.length;
+          for (const u of a.urls) {
+            urls.add(u);
+            globalPairs.add(`${a.key}\t${u}`);
+          }
+        }
+      }
+      return {
+        query,
+        articles: articles.sort((a, b) => b.urls.length - a.urls.length),
+        articleCount: articles.length,
+        linkCount: count,
+        distinctUrls: urls.size,
+      };
+    });
+    const complete =
+      Object.values(state.tasks).filter((t) => t.complete).length ===
+      queries.length * sites.length;
+    return {
+      summaries,
+      articleCount: globalPages.size,
+      linkCount: globalPairs.size,
+      failures,
+      scannedAt: new Date(),
+      startedAt: state.startedAt,
+      scope,
+      sites,
+      partial: !complete,
+      canResume: !complete,
+    };
+  }
+  const save = () => onCheckpoint(state, snapshot());
+  outer: for (const query of queries)
     for (const site of sites) {
-      let continuation = null;
-      const sitePairs = new Set(),
-        siteArticles = new Map(),
-        siteUrls = new Set();
+      if (run.aborted) break outer;
+      const key = `${query.display}|${site.code}`;
+      const task = (state.tasks[key] ||= {
+        articles: [],
+        continuation: null,
+        complete: false,
+      });
+      if (task.complete) continue;
+      const articles = new Map(task.articles.map((a) => [a.key, a]));
+      delete task.error;
       try {
         do {
+          if (run.aborted) break;
           run.status(
-            `${query.display} · Wikipédia ${site.code} · ${sitePairs.size} liens`,
+            `${query.display} · Wikipédia ${site.code} · ${articles.size} articles déjà trouvés`,
           );
           const data = await request(
             `${site.url}/w/api.php`,
             {
               list: "exturlusage",
               euprop: "ids|title|url",
-              eulimit: "max",
+              eulimit: 100,
               eunamespace: 0,
               euquery: query.apiQuery,
-              ...(continuation || {}),
+              ...(task.continuation || {}),
             },
             run,
           );
           for (const row of data.query?.exturlusage || []) {
             if (row.ns !== 0 || !query.matches(row.url)) continue;
-            const key = `${site.code}:${row.pageid || row.title}`,
-              pair = `${key}\t${row.url}`;
-            if (sitePairs.has(pair)) continue;
-            sitePairs.add(pair);
-            siteUrls.add(row.url);
-            const article = siteArticles.get(key) || {
-              key,
+            const k = `${site.code}:${row.pageid || row.title}`;
+            const a = articles.get(k) || {
+              key: k,
               title: row.title,
               site,
               url: pageUrl(site.url, row.title),
               urls: [],
             };
-            article.urls.push(row.url);
-            siteArticles.set(key, article);
+            if (!a.urls.includes(row.url)) a.urls.push(row.url);
+            articles.set(k, a);
           }
-          continuation = continuationParams(data);
-        } while (continuation);
+          task.articles = [...articles.values()];
+          task.continuation = continuationParams(data);
+          task.complete = !task.continuation;
+          save();
+        } while (task.continuation && !run.aborted);
       } catch (error) {
-        if (run.aborted) throw error;
-        failures.push({
-          source: query.display,
-          wiki: site.code,
-          message: error.message,
-        });
+        task.error = run.aborted ? "Relevé mis en pause." : error.message;
+        save();
+        if (run.aborted) break outer;
       }
-      for (const [key, a] of siteArticles) {
-        articles.set(key, a);
-        globalPages.add(key);
-      }
-      for (const u of siteUrls) urls.add(u);
-      for (const pair of sitePairs) {
-        pairs.add(pair);
-        globalPairs.add(pair);
-      }
-      update(++done, queries.length * sites.length);
+      update(
+        Object.values(state.tasks).filter((t) => t.complete).length,
+        queries.length * sites.length,
+      );
     }
-    summaries.push({
-      query,
-      articles: [...articles.values()].sort(
-        (a, b) => b.urls.length - a.urls.length,
-      ),
-      articleCount: articles.size,
-      linkCount: pairs.size,
-      distinctUrls: urls.size,
-    });
-  }
-  return {
-    summaries,
-    linkCount: globalPairs.size,
-    articleCount: globalPages.size,
-    failures,
-    scannedAt: new Date(),
-    scope,
-    sites,
-  };
+  save();
+  return snapshot();
 }
