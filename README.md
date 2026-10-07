@@ -39,3 +39,9 @@ Les appels sont séquentiels, avec une pause d’au moins une seconde après cha
 **Mettre en pause** conserve l’avancement. **Reprendre le relevé** poursuit la collecte sans recommencer les pages déjà reçues. Le dernier relevé est sauvegardé dans ce navigateur et peut être restauré pendant 24 heures, même après un rechargement. Une nouvelle recherche repart de zéro pour actualiser les données. Si le stockage du navigateur est plein ou interdit, la reprise reste disponible tant que la page demeure ouverte.
 
 Une panne durable de l’API peut laisser un relevé partiel : les données reçues restent consultables et exportables, avec cette limite indiquée. Aucun résultat manquant n’est remplacé par un chiffre inventé.
+
+## Démo
+
+Une démonstration est disponible pour [tester le projet en ligne](https://compteur-citations-wikipedia.vercel.app/), sans installation.
+
+Une mise à disposition sur Toolforge est prévue. Le lien sera ajouté ici lorsqu’elle sera disponible.
