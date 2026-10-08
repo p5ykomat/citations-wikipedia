@@ -998,3 +998,7 @@ body.v2 header {
   color: var(--accent);
   border-color: var(--accent);
 }
+
+.language-picker { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.language-picker select { width: auto; margin: 0; padding: 6px 10px; }
+footer { flex-wrap: wrap; gap: 12px 24px; }

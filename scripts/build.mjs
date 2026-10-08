@@ -6,7 +6,7 @@ for (const entry of [
   "index.html",
   "styles.css",
   "src",
-  "assets",
+
   "docs",
   "LICENSE",
   "LICENSE-DOCS.md",

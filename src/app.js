@@ -1,3 +1,4 @@
+import { t, initLanguage, restoreForm } from "./i18n.js";
 import * as backend from "./analyze.js";
 import { createRun } from "./mediawiki.js";
 import {
@@ -10,12 +11,13 @@ import {
 const $ = (s) => document.querySelector(s),
   kind = document.body.dataset.kind,
   isCommons = kind === "commons";
-document.body.classList.add("v2");
+
+initLanguage();
 const labels = {
-  source: "Lien dans la source",
-  institution: "Lien dans l’institution",
-  other: "Lien ailleurs",
-  unverified: "À vérifier",
+  source: t("Lien dans la source"),
+  institution: t("Lien dans l’institution"),
+  other: t("Lien ailleurs"),
+  unverified: t("À vérifier"),
 };
 let visibleCount = 100;
 let result = null,
@@ -39,6 +41,7 @@ function metric(value, label) {
 }
 function busy(value) {
   for (const c of $("#search").elements) c.disabled = value;
+  $("#language").disabled = value;
   $("#stop").disabled = !value;
   $("#export").disabled = value || !result;
   $("#search").setAttribute("aria-busy", String(value));
@@ -61,7 +64,7 @@ let saved = null;
 const resumeButton = el("button", {
   type: "button",
   id: "resume",
-  text: "Reprendre le relevé",
+  text: t("Reprendre le relevé"),
   hidden: true,
 });
 $("#status").after(resumeButton);
@@ -80,10 +83,10 @@ async function execute(args, checkpoint) {
   resumeButton.hidden = true;
   if (!checkpoint) {
     visibleCount = 100;
-    if (isCommons) $("#results-title").textContent = "Fichiers repérés";
+    if (isCommons) $("#results-title").textContent = t("Fichiers repérés");
     result = null;
     $("#results").replaceChildren(
-      el("p", { text: "Lecture des données publiques en cours…" }),
+      el("p", { text: t("Lecture des données publiques en cours…") }),
     );
     $("#metrics").replaceChildren();
     $("#filters").replaceChildren();
@@ -115,7 +118,7 @@ async function execute(args, checkpoint) {
   } catch (e) {
     error(e.message);
     $("#status").textContent =
-      "Relevé interrompu. Les données déjà reçues sont conservées.";
+      t("Relevé interrompu. Les données déjà reçues sont conservées.");
     if (result) render();
   } finally {
     run = null;
@@ -141,7 +144,7 @@ $("#search").onsubmit = (event) => {
     .map((s) => s.trim())
     .filter(Boolean);
   if (!values.length || values.length > 5) {
-    error("Saisissez de une à cinq sources.");
+    error(t("Saisissez de une à cinq sources."));
     $("#query").focus();
     return;
   }
@@ -170,8 +173,8 @@ function render() {
   $("#example").hidden = !isDemo;
   $("#export").disabled = false;
   $("#status").textContent = isDemo
-    ? "Exemple de présentation, sans appel aux API"
-    : `${result.partial ? "Relevé partiel" : "Relevé"} du ${formatDate(result.scannedAt)}`;
+    ? t("Exemple de présentation, sans appel aux API")
+    : t`${result.partial ? t("Relevé partiel") : t("Relevé")} du ${formatDate(result.scannedAt)}`;
   $("#metrics").replaceChildren();
   $("#filters").replaceChildren();
   $("#results").replaceChildren();
@@ -184,17 +187,17 @@ function render() {
       ]),
     );
     $("#metrics").append(
-      metric(result.files.length, "Fichiers repérés"),
-      metric(counts.source, "Liens dans la source"),
-      metric(counts.institution, "Dans l’institution"),
-      metric(counts.other + counts.unverified, "Autres cas"),
+      metric(result.files.length, t("Fichiers repérés")),
+      metric(counts.source, t("Liens dans la source")),
+      metric(counts.institution, t("Dans l’institution")),
+      metric(counts.other + counts.unverified, t("Autres cas")),
     );
     for (const [key, name] of [
-      ["all", "Tous"],
-      ["source", "Source"],
-      ["institution", "Institution"],
-      ["other", "Ailleurs"],
-      ["unverified", "À vérifier"],
+      ["all", t("Tous")],
+      ["source", t("Source")],
+      ["institution", t("Institution")],
+      ["other", t("Ailleurs")],
+      ["unverified", t("À vérifier")],
     ]) {
       const b = el("button", {
         type: "button",
@@ -227,7 +230,7 @@ function render() {
           el("div", {}, [
             el("h3", {}, title),
             el("small", {
-              text: isDemo ? "Notice fictive" : "Page de fichier Commons",
+              text: isDemo ? t("Notice fictive") : t("Page de fichier Commons"),
             }),
           ]),
         ]),
@@ -241,19 +244,19 @@ function render() {
       record.append(
         el("p", {
           className: "record-url",
-          text: file.evidence[0]?.url || "Emplacement du lien non vérifié",
+          text: file.evidence[0]?.url || t("Emplacement du lien non vérifié"),
         }),
       );
       const detail = el("button", {
         type: "button",
-        text: "Voir le lien repéré ↗",
+        text: t("Voir le lien repéré ↗"),
       });
       detail.onclick = () => showEvidence(file);
       const usage = el("button", {
         type: "button",
         text: file.usage
-          ? `${file.usage.length} pages utilisatrices →`
-          : "Consulter les usages →",
+          ? t`${file.usage.length} pages utilisatrices →`
+          : t("Consulter les usages →"),
       });
       usage.onclick = () => showUsage(file, usage);
       record.append(
@@ -264,12 +267,12 @@ function render() {
     $("#results").append(
       list.children.length
         ? list
-        : el("p", { text: "Aucun fichier dans cette catégorie." }),
+        : el("p", { text: t("Aucun fichier dans cette catégorie.") }),
     );
     if (filteredFiles.length > visibleCount) {
       const more = el("button", {
         type: "button",
-        text: `Afficher 100 fichiers supplémentaires (${visibleCount} sur ${filteredFiles.length})`,
+        text: t`Afficher 100 fichiers supplémentaires (${visibleCount} sur ${filteredFiles.length})`,
       });
       more.onclick = () => {
         visibleCount += 100;
@@ -279,13 +282,13 @@ function render() {
     }
     if (!isDemo && result.discoveryComplete) {
       $("#results-title").textContent =
-        `${numberFormat.format(result.files.length)} fichiers repérés${result.truncated ? " (limite atteinte)" : " au total"}`;
-    } else if (isCommons) $("#results-title").textContent = "Fichiers repérés";
+        t`${numberFormat.format(result.files.length)} fichiers repérés${result.truncated ? t(" (limite atteinte)") : t(" au total")}`;
+    } else if (isCommons) $("#results-title").textContent = t("Fichiers repérés");
     $("#coverage").textContent =
-      "La présence d’un lien indique son emplacement, pas une provenance certifiée. Les liens générés par des modèles sont pris en compte dans la page affichée.";
+      t("La présence d’un lien indique son emplacement, pas une provenance certifiée. Les liens générés par des modèles sont pris en compte dans la page affichée.");
     if (result.truncated) {
       $("#notice").textContent =
-        `Limite atteinte : ${result.files.length} fichiers examinés. Ces chiffres ne représentent pas toute la collection.`;
+        t`Limite atteinte : ${result.files.length} fichiers examinés. Ces chiffres ne représentent pas toute la collection.`;
       $("#notice").hidden = false;
     }
   } else {
@@ -293,16 +296,16 @@ function render() {
       result.summaries.flatMap((s) => s.articles.flatMap((a) => a.urls)),
     );
     $("#metrics").append(
-      metric(result.articleCount, "Articles distincts"),
-      metric(result.linkCount, "Liens article / URL"),
-      metric(distinct.size, "URL distinctes"),
+      metric(result.articleCount, t("Articles distincts")),
+      metric(result.linkCount, t("Liens article / URL")),
+      metric(distinct.size, t("URL distinctes")),
     );
     for (const summary of result.summaries) {
       $("#results").append(
         el("h3", { className: "source-heading" }, [
           summary.query.display,
           el("span", {
-            text: `${summary.articleCount} articles · ${summary.linkCount} liens`,
+            text: t`${summary.articleCount} articles · ${summary.linkCount} liens`,
           }),
         ]),
       );
@@ -310,7 +313,7 @@ function render() {
       for (const article of summary.articles.slice(0, 100)) {
         const action = el("button", {
           type: "button",
-          text: "Vérifier les références",
+          text: t("Vérifier les références"),
         });
         action.onclick = () => showReferences(article, summary.query, action);
         list.append(
@@ -324,12 +327,12 @@ function render() {
                   : link(article.url, article.title),
               ),
               el("small", {
-                text: `Wikipédia ${article.site.code} · ${summary.query.display}`,
+                text: t`Wikipédia ${article.site.code} · ${summary.query.display}`,
               }),
             ]),
             el("div", { className: "count" }, [
               el("strong", { text: article.urls.length }),
-              el("span", { text: "liens" }),
+              el("span", { text: t("liens") }),
             ]),
             action,
           ]),
@@ -337,32 +340,32 @@ function render() {
       }
       if (!summary.articles.length)
         list.append(
-          el("p", { text: "Aucun article repéré pour cette source." }),
+          el("p", { text: t("Aucun article repéré pour cette source.") }),
         );
       if (summary.articles.length > 100)
         list.append(
           el("p", {
-            text: "100 articles affichés. Le fichier CSV contient la liste complète.",
+            text: t("100 articles affichés. Le fichier CSV contient la liste complète."),
           }),
         );
       $("#results").append(list);
     }
     $("#coverage").textContent =
-      "Un lien répété dans le même article est compté une seule fois pour la même URL. La vérification des notes de référence se fait article par article.";
+      t("Un lien répété dans le même article est compté une seule fois pour la même URL. La vérification des notes de référence se fait article par article.");
     if (result.failures.length) {
       $("#notice").textContent =
-        `Relevé partiel : ${result.failures.map((f) => `${f.source} (${f.wiki}) : ${f.message}`).join(" ; ")}`;
+        t("Relevé partiel : ") + result.failures.map((f) => `${f.source} (${f.wiki}) : ${f.message}`).join(" ; ");
       $("#notice").hidden = false;
     }
   }
   if (result.partial) {
     $("#notice").textContent =
-      "Relevé incomplet : les résultats déjà reçus sont conservés. " +
+      t("Relevé incomplet : les résultats déjà reçus sont conservés. ") +
       (result.collectionError ||
         (result.failures || [])
           .map((f) => `${f.source} (${f.wiki}) : ${f.message}`)
           .join(" ; ")) +
-      " Vous pouvez reprendre la collecte.";
+      t(" Vous pouvez reprendre la collecte.");
     $("#notice").hidden = false;
   }
 }
@@ -370,7 +373,7 @@ function showEvidence(file) {
   const contents = [
     el("h3", { text: file.title.replace(/^File:/, "") }),
     el("p", {
-      text: `Classement : ${labels[file.status]}. ${file.revision ? "Version " + file.revision + "." : ""}`,
+      text: t`Classement : ${labels[file.status]}. ${file.revision ? t("Version ") + file.revision + "." : ""}`,
     }),
   ];
   for (const e of file.evidence)
@@ -378,7 +381,7 @@ function showEvidence(file) {
       el("div", { className: "evidence" }, [
         el("span", {
           className: `tag ${e.context}`,
-          text: labels[e.context] || "Autre emplacement",
+          text: labels[e.context] || t("Autre emplacement"),
         }),
         el("p", {}, isDemo ? el("span", { text: e.url }) : link(e.url, e.url)),
         el("p", { text: e.excerpt }),
@@ -389,10 +392,10 @@ function showEvidence(file) {
       el("p", {
         text:
           file.error ||
-          "Lien indexé mais non retrouvé dans la page affichée. Vérification manuelle nécessaire.",
+          t("Lien indexé mais non retrouvé dans la page affichée. Vérification manuelle nécessaire."),
       }),
     );
-  if (!isDemo) contents.push(link(file.url, "Ouvrir la page du fichier ↗"));
+  if (!isDemo) contents.push(link(file.url, t("Ouvrir la page du fichier ↗")));
   modal(contents);
 }
 async function showUsage(file, button) {
@@ -400,7 +403,7 @@ async function showUsage(file, button) {
   if (isDemo) {
     modal([
       el("p", {
-        text: "Les réutilisations de cet exemple fictif ne sont pas calculées. Lancez une recherche réelle pour les consulter.",
+        text: t("Les réutilisations de cet exemple fictif ne sont pas calculées. Lancez une recherche réelle pour les consulter."),
       }),
     ]);
     return;
@@ -415,13 +418,13 @@ async function showUsage(file, button) {
     for (const u of file.usage)
       list.append(el("li", {}, link(u.url, `${u.title} (${u.wiki})`)));
     modal([
-      el("h3", { text: `${file.usage.length} pages utilisatrices` }),
+      el("h3", { text: t`${file.usage.length} pages utilisatrices` }),
       el("p", {
-        text: "Pages qui incluent ce fichier dans les wikis, tous espaces de noms confondus. Cela ne mesure pas les consultations de l’image.",
+        text: t("Pages qui incluent ce fichier dans les wikis, tous espaces de noms confondus. Cela ne mesure pas les consultations de l’image."),
       }),
       list,
     ]);
-    button.textContent = `${file.usage.length} pages utilisatrices →`;
+    button.textContent = t`${file.usage.length} pages utilisatrices →`;
   } catch (e) {
     modal([el("p", { text: e.message })]);
   } finally {
@@ -436,7 +439,7 @@ async function showReferences(article, query, button) {
   if (isDemo) {
     modal([
       el("p", {
-        text: "Cet article est fictif. Lancez une recherche réelle pour lire ses références.",
+        text: t("Cet article est fictif. Lancez une recherche réelle pour lire ses références."),
       }),
     ]);
     return;
@@ -452,13 +455,13 @@ async function showReferences(article, query, button) {
     modal([
       el("h3", { text: article.title }),
       el("p", {
-        text: `${check.referenceNotes} notes de référence contiennent un lien vers ${query.display}. Version ${check.revision}.`,
+        text: t`${check.referenceNotes} notes de référence contiennent un lien vers ${query.display}. Version ${check.revision}.`,
       }),
       el("p", {
-        text: `${check.otherUrls.length} URL correspondantes apparaissent aussi ou seulement hors des notes. Ce contrôle ne juge pas la qualité de la source.`,
+        text: t`${check.otherUrls.length} URL correspondantes apparaissent aussi ou seulement hors des notes. Ce contrôle ne juge pas la qualité de la source.`,
       }),
       list,
-      link(article.url, "Lire l’article ↗"),
+      link(article.url, t("Lire l’article ↗")),
     ]);
   } catch (e) {
     modal([el("p", { text: e.message })]);
@@ -474,16 +477,16 @@ $("#export").onclick = () => {
   const rows = isCommons
     ? [
         [
-          "fichier",
-          "classement",
-          "lien",
-          "emplacement",
-          "extrait",
-          "revision",
-          "erreur",
-          "pages_utilisatrices",
-          "releve_partiel",
-          "date",
+          t("fichier"),
+          t("classement"),
+          t("lien"),
+          t("emplacement"),
+          t("extrait"),
+          t("revision"),
+          t("erreur"),
+          t("pages_utilisatrices"),
+          t("releve_partiel"),
+          t("date"),
         ],
         ...result.files.flatMap((f) =>
           (f.evidence.length ? f.evidence : [{}]).map((e) => [
@@ -506,10 +509,10 @@ $("#export").onclick = () => {
           "wikipedia",
           "article",
           "url",
-          "nombre_liens",
-          "liens",
-          "releve_partiel",
-          "date",
+          t("nombre_liens"),
+          t("liens"),
+          t("releve_partiel"),
+          t("date"),
         ],
         ...result.summaries.flatMap((s) =>
           s.articles.map((a) => [
@@ -579,7 +582,7 @@ function demo() {
   } else {
     const articles = [
       "Histoire de la cartographie",
-      "Bibliothèque numérique",
+      t("Bibliothèque numérique"),
       "Patrimoine documentaire",
       "Conservation des documents",
     ].map((title, i) => ({
@@ -621,11 +624,13 @@ if (new URLSearchParams(location.search).get("demo") !== "1") {
       $("#query").value = cached.args.values.join("\n");
       render();
       $("#status").textContent =
-        "Relevé sauvegardé du " +
+        t("Relevé sauvegardé du ") +
         formatDate(result.scannedAt) +
-        ". Relancez la recherche pour actualiser.";
+        t(". Relancez la recherche pour actualiser.");
     }
   } catch {
     /* Une sauvegarde incompatible est ignorée. */
   }
 }
+
+restoreForm();

@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import {
   mediaWikiRequest,
   continuationParams,
@@ -50,7 +51,7 @@ export async function inspectArticle(
     run,
   );
   if (typeof data.parse?.text !== "string")
-    throw new Error("Page non lisible.");
+    throw new Error(t("Page non lisible."));
   return {
     ...classifyCitationsHtml(data.parse.text, query, Parser),
     revision: data.parse.revid,
@@ -78,7 +79,7 @@ export async function runSearch({
     ).values(),
   ];
   if (!queries.length)
-    throw new Error("Saisissez au moins un domaine ou une URL.");
+    throw new Error(t("Saisissez au moins un domaine ou une URL."));
   const signature = JSON.stringify([
     queries.map((q) => [q.mode, q.display]),
     scope,
@@ -92,7 +93,7 @@ export async function runSearch({
       : scope === "core"
         ? Object.values(SITES)
         : [SITES[scope] || SITES.fr]);
-  if (!sites.length) throw new Error("Aucune Wikipédia disponible.");
+  if (!sites.length) throw new Error(t("Aucune Wikipédia disponible."));
   const state = saved || {
     signature,
     sites,
@@ -167,7 +168,7 @@ export async function runSearch({
         do {
           if (run.aborted) break;
           run.status(
-            `${query.display} · Wikipédia ${site.code} · ${articles.size} articles déjà trouvés`,
+            t`${query.display} · Wikipédia ${site.code} · ${articles.size} articles déjà trouvés`,
           );
           const data = await request(
             `${site.url}/w/api.php`,
@@ -200,7 +201,7 @@ export async function runSearch({
           save();
         } while (task.continuation && !run.aborted);
       } catch (error) {
-        task.error = run.aborted ? "Relevé mis en pause." : error.message;
+        task.error = run.aborted ? t("Relevé mis en pause.") : error.message;
         save();
         if (run.aborted) break outer;
       }

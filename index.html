@@ -4,22 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="robots" content="noindex,nofollow" />
-    <title>Compteur citations Wikipédia</title>
+    <title>Wiki Link Count</title>
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="src/app.js"></script>
   </head>
-  <body data-kind="citations">
+  <body class="v2" data-kind="citations">
     <a class="skip" href="#main">Aller au contenu</a>
     <header>
       <a class="brand" href="/"
-        ><span class="brand-icon" aria-hidden="true">⁙</span>Citations
-        Wikipédia</a
+        ><span class="brand-icon" aria-hidden="true">⁙</span>Wiki Link Count</a
       >
       <nav aria-label="Navigation principale">
         <button data-dialog="method">
           Méthode <span aria-hidden="true">↗</span></button
-        ><button data-dialog="about">À propos</button
-        ><span class="version-switch" hidden></span>
+        ><label class="language-picker">Language / Langue <select id="language"><option value="en" lang="en">English</option><option value="fr" lang="fr">Français</option></select></label>
       </nav>
     </header>
     <main id="main">
@@ -128,7 +126,7 @@
           <p id="coverage" class="coverage"></p>
         </section>
       </div>
-      <footer>
+      <footer><span><a href="https://meta.wikimedia.org/wiki/User:Mathieu_Denel_WMFr">Mathieu Denel WMFR</a> · <span>Projet personnel</span></span>
         <span>API publiques Wikimédia</span
         ><span>Code MIT · Contenus CC BY-SA 4.0</span>
       </footer>
@@ -156,20 +154,7 @@
         >Lire les limites et les contrôles</a
       >
     </dialog>
-    <dialog id="about">
-      <div class="dialog-top">
-        <h2>À propos</h2>
-        <button data-close aria-label="Fermer">×</button>
-      </div>
-      <p>Retrouvez les autres outils sur Atlas.</p>
-      <a
-        href="https://mdenel.vercel.app/"
-        target="_blank"
-        rel="noopener noreferrer"
-        >Ouvrir Atlas dans un nouvel onglet ↗</a
-      >
-    </dialog>
-    <dialog id="detail">
+<dialog id="detail">
       <div class="dialog-top">
         <h2>Détail du résultat</h2>
         <button data-close aria-label="Fermer">×</button>

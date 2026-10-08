@@ -1,5 +1,6 @@
+import { t } from "./i18n.js";
 export function parseHtml(html, Parser = globalThis.DOMParser) {
-  if (!Parser) throw new Error("Lecture HTML indisponible.");
+  if (!Parser) throw new Error(t("Lecture HTML indisponible."));
   return new Parser().parseFromString(html, "text/html");
 }
 export function matchingLinks(root, query) {

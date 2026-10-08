@@ -1,4 +1,8 @@
-# Compteur citations Wikipédia
+# Wiki Link Count
+
+Find Wikipedia articles linking to a website, check reference notes, and export results. Interface available in English and French. Counts indexed article/URL pairs, not all citation occurrences.
+
+Interface disponible en français et en anglais. [Déploiement Toolforge](docs/TOOLFORGE.md).
 
 Repérer les articles qui renvoient vers une publication et vérifier les notes de référence dans lesquelles elle apparaît.
 

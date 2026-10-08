@@ -1,4 +1,5 @@
-export const numberFormat = new Intl.NumberFormat("fr-FR");
+import { t, locale } from "./i18n.js";
+export const numberFormat = new Intl.NumberFormat(locale);
 
 export function normalizeUrl(value) {
   const raw = String(value || "").trim();
@@ -9,21 +10,21 @@ export function normalizeUrl(value) {
 
 export function normalizeQuery(value, mode) {
   const raw = String(value || "").trim();
-  if (!raw) throw new Error("Saisissez un domaine ou une URL.");
+  if (!raw) throw new Error(t("Saisissez un domaine ou une URL."));
 
   if (mode === "domain") {
     let parsed;
     try {
       parsed = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
     } catch {
-      throw new Error("Saisissez un domaine valide, par exemple bnf.fr.");
+      throw new Error(t("Saisissez un domaine valide, par exemple bnf.fr."));
     }
     const domain = parsed.hostname
       .toLowerCase()
       .replace(/^\*\./, "")
       .replace(/^www\./, "");
     if (!domain.includes(".") || /\s/.test(domain))
-      throw new Error("Saisissez un domaine valide, par exemple bnf.fr.");
+      throw new Error(t("Saisissez un domaine valide, par exemple bnf.fr."));
     return {
       mode,
       display: domain,
@@ -45,7 +46,7 @@ export function normalizeQuery(value, mode) {
     parsed = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
     target = normalizeUrl(raw);
   } catch {
-    throw new Error("Saisissez une URL valide.");
+    throw new Error(t("Saisissez une URL valide."));
   }
   return {
     mode,
@@ -62,7 +63,7 @@ export function normalizeQuery(value, mode) {
 }
 
 export function formatDate(value = new Date()) {
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "short",
     timeStyle: "short",
   }).format(value);

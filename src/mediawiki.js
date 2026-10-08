@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 const DEFAULT_TIMEOUT = 30000;
 
 export function createRun(statusCallback = () => {}) {
@@ -16,10 +17,10 @@ export function createRun(statusCallback = () => {}) {
 
 function wait(run, milliseconds) {
   return new Promise((resolve, reject) => {
-    if (run?.aborted) return reject(new Error("Analyse arrêtée."));
+    if (run?.aborted) return reject(new Error(t("Analyse arrêtée.")));
     const end = Date.now() + milliseconds;
     const check = () => {
-      if (run?.aborted) return reject(new Error("Analyse arrêtée."));
+      if (run?.aborted) return reject(new Error(t("Analyse arrêtée.")));
       const remaining = end - Date.now();
       if (remaining <= 0) return resolve();
       setTimeout(check, Math.min(250, remaining));
@@ -60,10 +61,10 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
   });
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
-    if (run?.aborted) throw new Error("Analyse arrêtée.");
+    if (run?.aborted) throw new Error(t("Analyse arrêtée."));
     if (run?.nextAllowedAt > Date.now()) {
       const delay = run.nextAllowedAt - Date.now();
-      run.status(`Pause API · reprise dans ${Math.ceil(delay / 1000)} s`);
+      run.status(t`Pause API · reprise dans ${Math.ceil(delay / 1000)} s`);
       await pause(run, delay);
     }
 
@@ -96,7 +97,7 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
           run.nextAllowedAt,
           Date.now() + minInterval,
         );
-      if (!response.ok) throw new Error(`Erreur API HTTP ${response.status}.`);
+      if (!response.ok) throw new Error(t`Erreur API HTTP ${response.status}.`);
       const data = await response.json();
       if (data.error) {
         if (data.error.code === "maxlag" && attempt < retries) {
@@ -105,17 +106,17 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
           throw new Error(`RETRY:maxlag:${delay}`);
         }
         throw new Error(
-          data.error.info || data.error.code || "Erreur MediaWiki.",
+          data.error.info || data.error.code || t("Erreur MediaWiki."),
         );
       }
       return data;
     } catch (error) {
       const message = error?.message || "";
-      if (run?.aborted) throw new Error("Analyse arrêtée.");
+      if (run?.aborted) throw new Error(t("Analyse arrêtée."));
       if (message.startsWith("RETRY:") && attempt < retries) {
         const delay = Number(message.split(":")[2]) || 2000;
         run.status(
-          `API occupée · reprise automatique dans ${Math.ceil(delay / 1000)} s (essai ${attempt + 2}/${retries + 1})`,
+          t`API occupée · reprise automatique dans ${Math.ceil(delay / 1000)} s (essai ${attempt + 2}/${retries + 1})`,
         );
         await pause(run, delay);
         continue;
@@ -123,24 +124,24 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
       if (error?.name === "AbortError" && attempt < retries) {
         const delay = retryDelay(null, attempt);
         run.status(
-          `Délai dépassé · nouvelle tentative dans ${Math.ceil(delay / 1000)} s`,
+          t`Délai dépassé · nouvelle tentative dans ${Math.ceil(delay / 1000)} s`,
         );
         await pause(run, delay);
         continue;
       }
       if (message.startsWith("RETRY:")) {
         throw new Error(
-          "API temporairement indisponible après plusieurs tentatives. Reprenez le relevé dans quelques minutes.",
+          t("API temporairement indisponible après plusieurs tentatives. Reprenez le relevé dans quelques minutes."),
         );
       }
       if (error?.name === "AbortError") {
         throw new Error(
-          "L’API ne répond pas dans le délai prévu. Vous pouvez reprendre le relevé.",
+          t("L’API ne répond pas dans le délai prévu. Vous pouvez reprendre le relevé."),
         );
       }
       if (message === "Failed to fetch") {
         throw new Error(
-          "Impossible de joindre l’API MediaWiki. Vérifiez la connexion puis réessayez.",
+          t("Impossible de joindre l’API MediaWiki. Vérifiez la connexion puis réessayez."),
         );
       }
       throw error;
@@ -149,7 +150,7 @@ export async function mediaWikiRequest(api, parameters, run, options = {}) {
       run?.controllers.delete(controller);
     }
   }
-  throw new Error("Impossible de joindre l’API MediaWiki.");
+  throw new Error(t("Impossible de joindre l’API MediaWiki."));
 }
 
 export function continuationParams(data) {
