@@ -1,51 +1,53 @@
 # Wiki Link Count
 
-Find Wikipedia articles linking to a website, check reference notes, and export results. Interface available in English and French. Counts indexed article/URL pairs, not all citation occurrences.
+English | [Français](README.fr.md)
 
-Interface disponible en français et en anglais. [Déploiement Toolforge](docs/TOOLFORGE.md).
+Find Wikipedia articles linking to a website, inspect their reference notes, and export results. Counts represent indexed article/URL pairs, not all link occurrences or bibliographic citations. Reference notes are checked separately for each article.
 
-Repérer les articles qui renvoient vers une publication et vérifier les notes de référence dans lesquelles elle apparaît.
+## Use online
 
-## Essayer sur son ordinateur
+[Open Wiki Link Count on Toolforge](https://wiki-link-count.toolforge.org/). No installation required.
 
-Installer une version récente de Node.js (22 ou 24), télécharger ce dépôt et ouvrir un terminal dans son dossier :
+## Run locally
+
+Install Node.js 22, download this repository, and run:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Ouvrir l’adresse locale indiquée dans le terminal. Aucun compte ni clé API nécessaire. Les requêtes partent du navigateur vers les API publiques Wikimédia.
+Open the local address printed in the terminal. No account or API key is required. Requests go directly from your browser to public Wikimedia APIs.
 
-Ajouter `?demo=1` pour afficher un exemple **fictif**, sans requête aux API.
+The interface supports English and French. Source titles and excerpts keep their original language.
 
-## Comprendre le résultat
+## Results and limitations
 
-Lire [la méthode, l’audit et les limites](docs/AUDIT.md). Les emplacements des liens sont montrés pour permettre une vérification. Le relevé n’est pas exhaustif.
+Read the [method and audit notes](docs/AUDIT.md) (French). Results depend on the API index and available page data; they are not an exhaustive historical record.
 
-## Vérifier le code
+## Pause and resume
+
+Requests are sequential, with a pause of at least one second after each response and up to 100 links per discovery page. Rate limits trigger bounded retries.
+
+**Pause** preserves progress. **Resume search** continues from the saved checkpoint. The latest results can be restored in the same browser for 24 hours. If browser storage is unavailable, progress remains available while the page stays open. A new search refreshes the data from scratch.
+
+API failures can produce partial results, which remain viewable and exportable with their limitations indicated.
+
+## Development and deployment
 
 ```sh
 npm test
 npm run build
+npm start
 ```
 
-Le site compilé se trouve dans `dist/`. Le dossier `src/` contient le code du navigateur, `tests/` les cas de régression. `linkedom` est utilisé uniquement pour les tests HTML, sous sa licence ISC. Aucune bibliothèque n’est chargée dans le navigateur.
+The build is written to `dist/`. Browser code is in `src/`; regression tests are in `tests/`. The HTML test dependency `linkedom` uses the ISC license and is not loaded in the browser.
 
-## Licences
+See the [Toolforge deployment and update guide](docs/TOOLFORGE.md). Updates currently require a build and service restart.
 
-Code sous [MIT](LICENSE). Textes, guides et créations visuelles originaux sous [CC BY-SA 4.0](LICENSE-DOCS.md). Attribution : **p5ykomat**. Les données externes conservent leurs licences et attributions.
+## Credits and licenses
 
-## Reprendre une collecte
+[Mathieu Denel WMFR](https://meta.wikimedia.org/wiki/User:Mathieu_Denel_WMFr) · Personal project.
 
-Les appels sont séquentiels, avec une pause d’au moins une seconde après chaque réponse et des pages de 100 liens au maximum pour le repérage. Si le service limite les requêtes, l’outil attend et réessaie, jusqu’à six tentatives par appel. Les résultats arrivent progressivement.
+Code: [MIT](LICENSE). Original documentation and visual content: [CC BY-SA 4.0](LICENSE-DOCS.md), attribution **p5ykomat**. External data retains its own licenses and attribution.
 
-**Mettre en pause** conserve l’avancement. **Reprendre le relevé** poursuit la collecte sans recommencer les pages déjà reçues. Le dernier relevé est sauvegardé dans ce navigateur et peut être restauré pendant 24 heures, même après un rechargement. Une nouvelle recherche repart de zéro pour actualiser les données. Si le stockage du navigateur est plein ou interdit, la reprise reste disponible tant que la page demeure ouverte.
-
-Une panne durable de l’API peut laisser un relevé partiel : les données reçues restent consultables et exportables, avec cette limite indiquée. Aucun résultat manquant n’est remplacé par un chiffre inventé.
-
-## Démo
-
-Une démonstration est disponible pour [tester le projet en ligne](https://compteur-citations-wikipedia.vercel.app/), sans installation.
-
-Une mise à disposition sur Toolforge est prévue. Le lien sera ajouté ici lorsqu’elle sera disponible.
