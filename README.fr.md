@@ -23,7 +23,7 @@ L’interface est disponible en français et en anglais. Les titres et extraits 
 
 ## Résultats et limites
 
-Lire [la méthode et les contrôles](docs/AUDIT.md). Les résultats dépendent de l’index de l’API et des données accessibles. Ils ne constituent pas un historique exhaustif.
+Les résultats dépendent de l’index de l’API et des données accessibles. Ils ne constituent pas un historique exhaustif.
 
 ## Mettre en pause et reprendre
 
@@ -42,8 +42,6 @@ npm start
 ```
 
 Le site compilé se trouve dans `dist/`, le code du navigateur dans `src/` et les tests dans `tests/`. La dépendance de test HTML `linkedom` utilise la licence ISC et n’est pas chargée dans le navigateur.
-
-Consulter le [guide de déploiement et de mise à jour Toolforge](docs/TOOLFORGE.md) (en anglais). Les mises à jour nécessitent actuellement une construction et un redémarrage du service.
 
 ## Crédit et licences
 

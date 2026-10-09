@@ -23,7 +23,7 @@ The interface supports English and French. Source titles and excerpts keep their
 
 ## Results and limitations
 
-Read the [method and audit notes](docs/AUDIT.md) (French). Results depend on the API index and available page data; they are not an exhaustive historical record.
+Results depend on the API index and available page data; they are not an exhaustive historical record.
 
 ## Pause and resume
 
@@ -42,8 +42,6 @@ npm start
 ```
 
 The build is written to `dist/`. Browser code is in `src/`; regression tests are in `tests/`. The HTML test dependency `linkedom` uses the ISC license and is not loaded in the browser.
-
-See the [Toolforge deployment and update guide](docs/TOOLFORGE.md). Updates currently require a build and service restart.
 
 ## Credits and licenses
 

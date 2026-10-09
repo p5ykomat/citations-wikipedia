@@ -7,7 +7,6 @@ for (const entry of [
   "styles.css",
   "src",
 
-  "docs",
   "LICENSE",
   "LICENSE-DOCS.md",
   "LICENSE-CC-BY-SA-4.0",

@@ -79,7 +79,6 @@ export const english = {
   "Fermer": "Close",
   "Les liens sont recherchés dans les pages de fichiers, puis classés selon leur emplacement : source, institution ou ailleurs. Les modèles sont développés par Commons avant cette lecture. Un lien en description n’est pas une preuve de provenance. Les pages non lues restent visibles dans « À vérifier ». Le relevé est limité aux liens indexés par l’API, au moment de la recherche. Les fichiers sans lien vers le domaine peuvent donc manquer.": "Links are retrieved from file pages and classified by location: source, institution or elsewhere. Commons expands templates before the page is examined. A link in a description is not proof of provenance. Unread pages remain under Needs review. Results cover links indexed by the API at the time of the search. Files without a link to the domain may therefore be missing.",
   "Le relevé n’est pas une photographie exhaustive de toute la collection. Il dépend de l’index des liens, de la version des pages et des accès disponibles.": "Results are not an exhaustive snapshot of the collection. They depend on the link index, page revisions and API availability.",
-  "Lire les limites et les contrôles": "Read about limitations and checks (French)",
   "Détail du résultat": "Result details",
   "Lien dans la source": "Link in source",
   "Lien dans l’institution": "Link in institution",
